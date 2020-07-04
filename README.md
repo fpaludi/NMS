@@ -1,5 +1,6 @@
 # Introduccion
 
+## Sistema de CV
 Se dispone la implementación de un pipeline de computer de Computer Vision que cuenta con una red Fast R-CNN pre-entrenada sobre el conjunto imágenes COCO, seguida por un algoritmo Non Maximum supression (NMS) standard.
 
 Este modelo va a consumir todas las imágenes de la carpeta **data/images/** que tengan extension **.jpg** y va a escribir los resultados en el directorio **results** con extension **.png** (esto se debe que matplotlib no soporta  guardar imágenes .jpg, es algo a solucionar en el futuro con otras librerías). Para lograr esto, las carpetas **data** y **results** se montan como volúmenes en el container de docker. En el repositorio se encuentran hay disponibles 100 imágenes de ejemplo
@@ -10,6 +11,23 @@ Para correr el modelo se debe ejecutar el siguiente comando
 
 Esto puede demorar unos minutos ya que hace uso de librerías pesadas como TensorFlow, OpenCV y Numpy.
 Luego de unos minutos, las imágenes resultantes estarán listos en la carpeta **results**
+
+## Testeando algoritmo NMS 
+
+Para validar el algoritmo se hicieron 2 tests básicos:
+  * test_no_remove_box: Se crean cajas que no están superpuestas y se testea que todas las cajas "sobrevivan" al algoritmo NMS
+  * test_remove_box: A un conjunto de cajas originales, se le agregan cajas con una superposición mayor a cierto valor (medida como IoU), se corre el algoritmo con un threshold menor al valor mencionado. Se verifica que solo "sobrevivan" las cajas originales
+
+Para correr estos test se deben seguir los siguientes pasos:
+```
+sudo apt install git
+sudo apt install python3-pip
+sudo apt-get install python3-venv
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements_dev.txt
+pytest -v
+```
 
 # Consideraciones
 
