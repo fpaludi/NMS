@@ -1,0 +1,14 @@
+version: "3.2"
+services:
+  model:
+    image: tf_model_img
+    container_name: tf_model_ctr
+    build:
+      context: ./
+    command: "python model.py"
+    environment:
+      - NMS_TH=0.4
+      - SCORE_TH=0.5
+    volumes:
+      - ./data:/model/data
+      - ./results:/model/results
