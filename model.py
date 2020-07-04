@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from copy import deepcopy
 from utils import label_map_util
+from nms import non_maximum_suppression
 
 MODEL_NAME = "faster_rcnn_inception_v2_coco_2018_01_28"
 PATH_TO_CKPT = f"./{MODEL_NAME}/frozen_inference_graph.pb"
@@ -17,7 +18,7 @@ NUM_CLASSES = 90
 try:
     # Non Maximum Supression threshold
     NMS_TH = float(os.getenv("NMS_TH"))
-    # Score threshold. 
+    # Score threshold.
     SCORE_TH = float(os.getenv("SCORE_TH"))
 except TypeError:
     print("Please set the necessary env variables")
@@ -27,6 +28,7 @@ if NMS_TH < 0 or SCORE_TH < 0:
     exit()
 
 np.random.seed(1999)
+
 
 def load_model():
     tf_graph = tf.Graph()
@@ -49,12 +51,13 @@ def load_labels():
     print(categories)
     return category_index
 
+
 def convert_box(boxes, image):
     """
     convert box from floats and order (y1, x1, y2, x2)
     to ints int order (x1, y1, w, h)
     """
-    results  = boxes
+    results = boxes
     results[:, 0] = results[:, 0] * image.shape[0]
     results[:, 1] = results[:, 1] * image.shape[1]
     results[:, 2] = results[:, 2] * image.shape[0] - results[:, 0]
@@ -108,54 +111,6 @@ def predict(tf_graph, sess, labels, image_np):
     return boxes, scores, classes
 
 
-def non_maximum_suppression(boxes_list, scores_list, th=0.55):
-    """
-    Non Maximum suppression algorithm. It assumes that boxes and scores are of the same class.
-
-    """
-    boxes  = deepcopy(list(boxes_list))
-    scores = deepcopy(list(scores_list))
-    filter_boxes  = []
-    filter_scores = []
-    while len(boxes) != 0:
-        max_score_idx = np.argmax(scores)
-        max_score     = scores[max_score_idx]
-        max_score_box = boxes[max_score_idx]
-        filter_boxes.append(max_score_box)
-        filter_scores.append(max_score)
-        del boxes[max_score_idx]
-        del scores[max_score_idx]
-
-        index_to_remove = []
-        for idx, box in enumerate(boxes):
-            if intersection_over_union(max_score_box, box) >= th:
-                index_to_remove.append(idx)
-
-        boxes = [boxes[idx] for idx in range(len(boxes)) if idx not in index_to_remove]
-        scores = [scores[idx] for idx in range(len(scores)) if idx not in index_to_remove]
-
-    return filter_boxes, filter_scores
-
-
-def intersection_over_union(box_a, box_b):
-    # Convert boxes from (x1, y1, w, h) to (x1, y1, x2 e y2)
-    box_a = [box_a[0], box_a[1], box_a[0] + box_a[2], box_a[1] + box_a[3]]
-    box_b = [box_b[0], box_b[1], box_b[0] + box_b[2], box_b[1] + box_b[3]]
-
-    # Interection rectangle
-    x_a = max(box_a[0], box_b[0])
-    y_a = max(box_a[1], box_b[1])
-    x_b = min(box_a[2], box_b[2])
-    y_b = min(box_a[3], box_b[3])
-    iter_area = max(0, x_b - x_a + 1) * max(0, y_b - y_a + 1)
-
-    box_a_area = (box_a[2] - box_a[0] + 1) * (box_a[3] - box_a[1] + 1)
-    box_b_area = (box_b[2] - box_b[0] + 1) * (box_b[3] - box_b[1] + 1)
-
-    iou = iter_area / float(box_a_area + box_b_area - iter_area)
-    return iou
-
-
 if __name__ == "__main__":
     tf_graph = load_model()
     labels = load_labels()
@@ -172,7 +127,7 @@ if __name__ == "__main__":
     with tf_graph.as_default():
         with tf.compat.v1.Session(graph=tf_graph) as sess:
 
-            image_list = glob.glob("data/images/*.jpg") 
+            image_list = glob.glob("data/images/*.jpg")
             for idx, image_path in enumerate(image_list):
                 img_name = image_path.split("/")[-1].strip()
                 print(f"Processing image {img_name} ({idx+1}/{len(image_list)})")
@@ -184,16 +139,26 @@ if __name__ == "__main__":
                 nms_sores = []
                 for clss in np.unique(classes):
                     mask = classes == clss
-                    loc_boxes, loc_sores = non_maximum_suppression(boxes[mask], scores[mask], NMS_TH)
+                    loc_boxes, loc_sores = non_maximum_suppression(
+                        boxes[mask], scores[mask], NMS_TH
+                    )
                     nms_boxes.extend(loc_boxes)
                     nms_sores.extend(loc_sores)
                     nms_classes.extend([clss] * len(loc_boxes))
 
                 f, axs = plt.subplots(1, 2)
                 plot_box_in_image(axs[0], image_np, boxes, scores, classes, labels_df)
-                plot_box_in_image(axs[1], image_np, nms_boxes, nms_sores, nms_classes, labels_df)
+                plot_box_in_image(
+                    axs[1], image_np, nms_boxes, nms_sores, nms_classes, labels_df
+                )
                 axs[0].set_title("Without using NSM")
                 axs[1].set_title("Using standard NSM")
-                plt.savefig(f"results/{img_name}".replace("jpg", "png"), format="png")
+                plt.tight_layout()
+                plt.savefig(
+                    f"results/{img_name}".replace("jpg", "png"),
+                    format="png",
+                    bbox_inches="tight",
+                    pad_inches=0,
+                )
                 plt.close()
 

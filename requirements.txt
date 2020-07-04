@@ -1,8 +1,7 @@
 numpy
 pandas
 tensorflow
-keras
 glob3
 opencv-python
 matplotlib
-pandas
+pytest
