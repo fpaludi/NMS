@@ -37,12 +37,11 @@ Una alternativa a este problema es utilizar una versión modificada del algoritm
 
 # Detalles de implementación
 
-Todo el pipeline de computer vision esta el archivo **model.py**. Las funciones que componen al algoritmo NMS son:
+Todo el pipeline de computer vision esta el archivo **model.py**. Mientras que las funciones que componen al algoritmo NMS estan dentro del archivo *nms.py** y son:
   * non_maximum_suppression
   * intersection_over_union
 
 Donde **non_maximum_suppression** hace uso de **intersection_over_union**
-
 
 # Pendientes
 
