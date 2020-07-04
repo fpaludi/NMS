@@ -17,6 +17,14 @@ El algoritmo NMS standard puede introducir errores cunado procesa objetos de la 
 
 Una alternativa a este problema es utilizar una versión modificada del algoritmo conocida como Soft-NMS. Este algoritmo no elimina las cajas que están muy superpuestas, sino que le reduce el score de las cajas que tienen menor confianza. Esto produce que el algoritmo pueda detectar objetos de la misma clase que están muy cercanos entre si, pero indicando menor confianza en algunos de ellos.
 
+# Detalles de implementación
+
+Todo el pipeline de computer vision esta el archivo **model.py**. Las funciones que componen al algoritmo NMS son:
+  * non_maximum_suppression
+  * intersection_over_union
+
+Donde **non_maximum_suppression** hace uso de **intersection_over_union**
+
 
 # Pendientes
 
